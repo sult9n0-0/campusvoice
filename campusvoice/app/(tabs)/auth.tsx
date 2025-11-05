@@ -1,4 +1,6 @@
+// app/auth.tsx
 import { View, Text, StyleSheet, TextInput, TouchableOpacity } from 'react-native';
+import { Link } from 'expo-router'; // use Link to navigate
 
 export default function AuthScreen() {
   return (
@@ -16,11 +18,12 @@ export default function AuthScreen() {
         <Text style={styles.buttonText}>Sign Up</Text>
       </TouchableOpacity>
 
-      <TouchableOpacity style={styles.loginLink}>
+      {/* Navigate to /login using Link */}
+      <Link href="/login" style={styles.loginLink}>
         <Text style={styles.loginText}>
           Already have an account? <Text style={styles.loginAccent}>Log In</Text>
         </Text>
-      </TouchableOpacity>
+      </Link>
     </View>
   );
 }
