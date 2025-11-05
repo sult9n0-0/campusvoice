@@ -4,7 +4,7 @@ export default function AuthScreen() {
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Welcome to CampusVoice</Text>
-      <Text style={styles.subtitle}>Sign up / Login with your University Email</Text>
+      <Text style={styles.subtitle}>*Please use your University Email to sign up</Text>
 
       <TextInput
         placeholder="University Email"
@@ -13,7 +13,13 @@ export default function AuthScreen() {
       />
 
       <TouchableOpacity style={styles.button}>
-        <Text style={styles.buttonText}>Continue</Text>
+        <Text style={styles.buttonText}>Sign Up</Text>
+      </TouchableOpacity>
+
+      <TouchableOpacity style={styles.loginLink}>
+        <Text style={styles.loginText}>
+          Already have an account? <Text style={styles.loginAccent}>Log In</Text>
+        </Text>
       </TouchableOpacity>
     </View>
   );
@@ -35,8 +41,8 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   subtitle: {
-    fontSize: 18,
-    color: '#39ACB5', // accent color
+    fontSize: 14,
+    color: '#39ACB5',
     marginBottom: 30,
     textAlign: 'center',
   },
@@ -57,14 +63,26 @@ const styles = StyleSheet.create({
   button: {
     width: '100%',
     height: 50,
-    backgroundColor: '#407ED1', // primary accent
+    backgroundColor: '#407ED1',
     borderRadius: 10,
     alignItems: 'center',
     justifyContent: 'center',
+    marginBottom: 15,
   },
   buttonText: {
     color: '#FFFFFF',
     fontSize: 18,
+    fontWeight: '600',
+  },
+  loginLink: {
+    marginBottom: 10,
+  },
+  loginText: {
+    fontSize: 16,
+    color: '#1A1A1A',
+  },
+  loginAccent: {
+    color: '#407ED1',
     fontWeight: '600',
   },
 });
