@@ -1,4 +1,3 @@
-// app/messages.tsx
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { useRouter } from 'expo-router';
@@ -22,7 +21,6 @@ export default function MessagesScreen() {
         All your messages will appear here. Start a conversation by clicking on a peer from the Peers tab.
       </Text>
 
-      {/* Add your message list or placeholder here */}
       <View style={styles.empty}>
         <Text style={styles.emptyText}>No messages yet.</Text>
       </View>
