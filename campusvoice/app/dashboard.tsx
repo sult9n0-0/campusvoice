@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useRouter } from 'expo-router';
 import {
   View,
   Text,
@@ -22,16 +23,18 @@ const initialProjects = [
 ];
 
 export default function DashboardScreen() {
+  const router = useRouter();
   const [projects, setProjects] = useState(initialProjects);
   const [modalVisible, setModalVisible] = useState(false);
   const [offerPayment, setOfferPayment] = useState(false);
 
-  // Form states
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [skills, setSkills] = useState('');
   const [deadline, setDeadline] = useState('');
   const [amount, setAmount] = useState('');
+
+  const [activeTab, setActiveTab] = useState<'Home' | 'Peers' | 'Messages'>('Home');
 
   const handlePost = () => {
     if (!title.trim()) return; // Require at least title
@@ -53,6 +56,12 @@ export default function DashboardScreen() {
     setDeadline('');
     setAmount('');
     setOfferPayment(false);
+  };
+
+  const handleTabPress = (tab: 'Home' | 'Peers' | 'Messages') => {
+    setActiveTab(tab);
+    if (tab === 'Peers') router.push('/peers');
+    // You can add Messages routing later if needed
   };
 
   return (
@@ -161,23 +170,34 @@ export default function DashboardScreen() {
 
       {/* Bottom Navigation */}
       <View style={styles.bottomNav}>
-        <TouchableOpacity style={styles.navItem}>
-          <Ionicons name="home" size={24} color="#407ED1" />
-          <Text style={styles.navTextActive}>Home</Text>
+        <TouchableOpacity style={styles.navItem} onPress={() => handleTabPress('Home')}>
+          <Ionicons
+            name="home"
+            size={24}
+            color={activeTab === 'Home' ? '#407ED1' : '#1A1A1A'}
+          />
+          <Text style={activeTab === 'Home' ? styles.navTextActive : styles.navText}>Home</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.navItem}>
-          <Ionicons name="people-outline" size={24} color="#1A1A1A" />
-          <Text style={styles.navText}>Peers</Text>
+        <TouchableOpacity style={styles.navItem} onPress={() => handleTabPress('Peers')}>
+          <Ionicons
+            name="people-outline"
+            size={24}
+            color={activeTab === 'Peers' ? '#407ED1' : '#1A1A1A'}
+          />
+          <Text style={activeTab === 'Peers' ? styles.navTextActive : styles.navText}>Peers</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.navItem}>
-          <Ionicons name="chatbubble-outline" size={24} color="#1A1A1A" />
-          <Text style={styles.navText}>Messages</Text>
+        <TouchableOpacity style={styles.navItem} onPress={() => handleTabPress('Messages')}>
+          <Ionicons
+            name="chatbubble-outline"
+            size={24}
+            color={activeTab === 'Messages' ? '#407ED1' : '#1A1A1A'}
+          />
+          <Text style={activeTab === 'Messages' ? styles.navTextActive : styles.navText}>Messages</Text>
         </TouchableOpacity>
       </View>
     </View>
   );
 }
-
 // ---------- STYLES ----------
 const styles = StyleSheet.create({
   container: {
