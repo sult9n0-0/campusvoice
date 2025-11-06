@@ -15,7 +15,9 @@ export default function TabLayout() {
         tabBarActiveTintColor: Colors[colorScheme ?? 'light'].tint,
         headerShown: false,
         tabBarButton: HapticTab,
-      }}>
+      }}
+    >
+      {/* Only Home and Explore tabs appear in the bottom bar */}
       <Tabs.Screen
         name="index"
         options={{

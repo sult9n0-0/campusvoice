@@ -12,20 +12,21 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
-// Initial sample data
 const initialProjects = [
-  { id: '1', title: 'AI-based Attendance System', postedBy: 'User#104' },
-  { id: '2', title: 'Food Waste Management App', postedBy: 'User#237' },
-  { id: '3', title: 'Blockchain Voting System', postedBy: 'User#351' },
-  { id: '4', title: 'Smart Campus Navigation', postedBy: 'User#482' },
-  { id: '5', title: 'Mental Health Support Bot', postedBy: 'User#596' },
-  { id: '6', title: 'IoT Smart Garden', postedBy: 'User#712' },
+  { id: '1', title: 'AI-based Attendance System', postedBy: 'User#104', description: 'Tracks student attendance using facial recognition.', skills: 'Python, OpenCV, ML' },
+  { id: '2', title: 'Food Waste Management App', postedBy: 'User#237', description: 'Connects restaurants with NGOs to reduce food waste.', skills: 'React Native, Firebase' },
+  { id: '3', title: 'Blockchain Voting System', postedBy: 'User#351', description: 'Secure and transparent blockchain-based voting platform.', skills: 'Solidity, Web3.js' },
+  { id: '4', title: 'Smart Campus Navigation', postedBy: 'User#482', description: 'Indoor navigation for students and visitors using BLE.', skills: 'IoT, React Native' },
+  { id: '5', title: 'Mental Health Support Bot', postedBy: 'User#596', description: 'Anonymous chatbot providing mental health support.', skills: 'AI, NLP, Python' },
+  { id: '6', title: 'IoT Smart Garden', postedBy: 'User#712', description: 'Automated irrigation system using IoT sensors.', skills: 'Arduino, IoT, Cloud' },
 ];
 
 export default function DashboardScreen() {
   const router = useRouter();
   const [projects, setProjects] = useState(initialProjects);
   const [modalVisible, setModalVisible] = useState(false);
+  const [detailsVisible, setDetailsVisible] = useState(false);
+  const [selectedProject, setSelectedProject] = useState(null);
   const [offerPayment, setOfferPayment] = useState(false);
 
   const [title, setTitle] = useState('');
@@ -33,23 +34,22 @@ export default function DashboardScreen() {
   const [skills, setSkills] = useState('');
   const [deadline, setDeadline] = useState('');
   const [amount, setAmount] = useState('');
-
-  const [activeTab, setActiveTab] = useState<'Home' | 'Peers' | 'Messages'>('Home');
+  const [activeTab, setActiveTab] = useState('Home');
 
   const handlePost = () => {
-    if (!title.trim()) return; // Require at least title
-
+    if (!title.trim()) return;
     const randomId = Math.floor(Math.random() * 1000);
     const newProject = {
       id: Date.now().toString(),
       title: title.trim(),
       postedBy: `User#${randomId}`,
+      description,
+      skills,
+      deadline,
+      amount,
     };
-
     setProjects([newProject, ...projects]);
     setModalVisible(false);
-
-    // Clear fields
     setTitle('');
     setDescription('');
     setSkills('');
@@ -58,10 +58,15 @@ export default function DashboardScreen() {
     setOfferPayment(false);
   };
 
-  const handleTabPress = (tab: 'Home' | 'Peers' | 'Messages') => {
+  const handleTabPress = (tab) => {
     setActiveTab(tab);
     if (tab === 'Peers') router.push('/peers');
-    // You can add Messages routing later if needed
+    if (tab === 'Messages') router.push('/messages');
+  };
+
+  const openProjectDetails = (project) => {
+    setSelectedProject(project);
+    setDetailsVisible(true);
   };
 
   return (
@@ -73,7 +78,6 @@ export default function DashboardScreen() {
           <Ionicons name="notifications-outline" size={24} color="#1A1A1A" />
         </View>
 
-        {/* Greeting */}
         <Text style={styles.greeting}>Welcome back 👋</Text>
         <Text style={styles.subtitle}>
           Find peers to collaborate with or share your projects anonymously
@@ -87,80 +91,133 @@ export default function DashboardScreen() {
           </TouchableOpacity>
         </View>
 
-        {/* Projects List */}
+        {/* Project List */}
         {projects.map((item) => (
-          <View key={item.id} style={styles.projectCard}>
+          <TouchableOpacity key={item.id} style={styles.projectCard} onPress={() => openProjectDetails(item)}>
             <Text style={styles.projectTitle}>{item.title}</Text>
             <Text style={styles.projectPoster}>by {item.postedBy}</Text>
-          </View>
+          </TouchableOpacity>
         ))}
 
-        {/* Add new project button */}
         <TouchableOpacity style={styles.addButton} onPress={() => setModalVisible(true)}>
           <Ionicons name="add-circle-outline" size={24} color="#fff" />
           <Text style={styles.addButtonText}>Post a New Project / Help Request</Text>
         </TouchableOpacity>
       </ScrollView>
 
-      {/* ---------- POP-UP MODAL ---------- */}
+            {/* --- PROJECT DETAILS MODAL --- */}
+      {/* --- PROJECT DETAILS MODAL --- */}
+      <Modal visible={detailsVisible} animationType="fade" transparent>
+        <View style={styles.modalOverlay}>
+          <View style={[styles.modalContainer, { padding: 20 }]}>
+            {selectedProject && (
+              <>
+                <Text style={styles.modalTitle}>{selectedProject.title}</Text>
+                <Text style={styles.detailText}>Posted by: {selectedProject.postedBy}</Text>
+                <Text style={styles.detailText}>Description: {selectedProject.description}</Text>
+                <Text style={styles.detailText}>Skills: {selectedProject.skills}</Text>
+                {selectedProject.deadline && (
+                  <Text style={styles.detailText}>Deadline: {selectedProject.deadline}</Text>
+                )}
+                {selectedProject.amount && (
+                  <Text style={styles.detailText}>Payment: {selectedProject.amount}</Text>
+                )}
+
+                {/* --- Buttons for Help / Cancel --- */}
+                <View style={[styles.modalButtons, { justifyContent: 'space-between' }]}>
+                  <TouchableOpacity
+                    style={[
+                      styles.postButton,
+                      { backgroundColor: '#4CAF50', flex: 1, marginRight: 10 },
+                    ]}
+                    onPress={() => {
+                      setDetailsVisible(false);
+                      alert('You offered to help this project!');
+                    }}
+                  >
+                    <Text style={styles.postText}>Help</Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={[
+                      styles.postButton,
+                      { backgroundColor: '#E53935', flex: 1 },
+                    ]}
+                    onPress={() => setDetailsVisible(false)}
+                  >
+                    <Text style={styles.postText}>Cancel</Text>
+                  </TouchableOpacity>
+                </View>
+              </>
+            )}
+          </View>
+        </View>
+      </Modal>
+      {/* --- POST NEW PROJECT MODAL --- */}
       <Modal visible={modalVisible} animationType="slide" transparent>
         <View style={styles.modalOverlay}>
           <View style={styles.modalContainer}>
-            <Text style={styles.modalTitle}>New Project / Help Request</Text>
+            <Text style={styles.modalTitle}>Post a New Project / Help Request</Text>
 
             <TextInput
               placeholder="Project Title"
-              style={styles.input}
-              placeholderTextColor="#888"
               value={title}
               onChangeText={setTitle}
-            />
-            <TextInput
-              placeholder="Description or what you need help with"
-              style={[styles.input, { height: 80 }]}
-              placeholderTextColor="#888"
-              value={description}
-              onChangeText={setDescription}
-              multiline
-            />
-            <TextInput
-              placeholder="Skills required (e.g., Python, Design, AI)"
               style={styles.input}
               placeholderTextColor="#888"
+            />
+            <TextInput
+              placeholder="Description"
+              value={description}
+              onChangeText={setDescription}
+              style={[styles.input, { height: 80 }]}
+              multiline
+              placeholderTextColor="#888"
+            />
+            <TextInput
+              placeholder="Skills Required"
               value={skills}
               onChangeText={setSkills}
+              style={styles.input}
+              placeholderTextColor="#888"
             />
             <TextInput
               placeholder="Deadline (optional)"
-              style={styles.input}
-              placeholderTextColor="#888"
               value={deadline}
               onChangeText={setDeadline}
+              style={styles.input}
+              placeholderTextColor="#888"
             />
 
-            {/* Offer Payment */}
             <View style={styles.paymentRow}>
-              <Text style={styles.paymentText}>Offering payment?</Text>
+              <Text style={styles.paymentText}>Offer Payment?</Text>
               <Switch value={offerPayment} onValueChange={setOfferPayment} />
             </View>
 
             {offerPayment && (
               <TextInput
-                placeholder="Amount (AED/USD)"
-                style={styles.input}
-                keyboardType="numeric"
-                placeholderTextColor="#888"
+                placeholder="Amount"
                 value={amount}
                 onChangeText={setAmount}
+                style={styles.input}
+                placeholderTextColor="#888"
+                keyboardType="numeric"
               />
             )}
 
             {/* Buttons */}
-            <View style={styles.modalButtons}>
-              <TouchableOpacity style={styles.cancelButton} onPress={() => setModalVisible(false)}>
-                <Text style={styles.cancelText}>Cancel</Text>
+            <View style={[styles.modalButtons, { justifyContent: 'space-between' }]}>
+              <TouchableOpacity
+                style={[styles.postButton, { backgroundColor: '#E53935', flex: 1, marginRight: 10 }]}
+                onPress={() => setModalVisible(false)}
+              >
+                <Text style={styles.postText}>Cancel</Text>
               </TouchableOpacity>
-              <TouchableOpacity style={styles.postButton} onPress={handlePost}>
+
+              <TouchableOpacity
+                style={[styles.postButton, { backgroundColor: '#4CAF50', flex: 1 }]}
+                onPress={handlePost}
+              >
                 <Text style={styles.postText}>Post</Text>
               </TouchableOpacity>
             </View>
@@ -171,27 +228,15 @@ export default function DashboardScreen() {
       {/* Bottom Navigation */}
       <View style={styles.bottomNav}>
         <TouchableOpacity style={styles.navItem} onPress={() => handleTabPress('Home')}>
-          <Ionicons
-            name="home"
-            size={24}
-            color={activeTab === 'Home' ? '#407ED1' : '#1A1A1A'}
-          />
+          <Ionicons name="home" size={24} color={activeTab === 'Home' ? '#407ED1' : '#1A1A1A'} />
           <Text style={activeTab === 'Home' ? styles.navTextActive : styles.navText}>Home</Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.navItem} onPress={() => handleTabPress('Peers')}>
-          <Ionicons
-            name="people-outline"
-            size={24}
-            color={activeTab === 'Peers' ? '#407ED1' : '#1A1A1A'}
-          />
+          <Ionicons name="people-outline" size={24} color={activeTab === 'Peers' ? '#407ED1' : '#1A1A1A'} />
           <Text style={activeTab === 'Peers' ? styles.navTextActive : styles.navText}>Peers</Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.navItem} onPress={() => handleTabPress('Messages')}>
-          <Ionicons
-            name="chatbubble-outline"
-            size={24}
-            color={activeTab === 'Messages' ? '#407ED1' : '#1A1A1A'}
-          />
+          <Ionicons name="chatbubble-outline" size={24} color={activeTab === 'Messages' ? '#407ED1' : '#1A1A1A'} />
           <Text style={activeTab === 'Messages' ? styles.navTextActive : styles.navText}>Messages</Text>
         </TouchableOpacity>
       </View>
