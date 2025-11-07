@@ -6,11 +6,11 @@ import { Ionicons } from '@expo/vector-icons';
 
 type Person = {
   id: string;
-  realName?: string; // for demo only — DON'T show this in UI
+  realName: string;
   dept?: string;
 };
 
-// Demo data: realName kept here only for your backend/dev use — UI will use aliases.
+// Demo data — real names shown since these are actual connections
 const connections: Person[] = [
   { id: 'u101', realName: 'Aisha Khan', dept: 'CSE' },
   { id: 'u202', realName: 'Mohamed Ali', dept: 'IT' },
@@ -18,26 +18,8 @@ const connections: Person[] = [
   { id: 'u404', realName: 'Carlos M.', dept: 'Design' },
 ];
 
-// Simple deterministic alias generator for demo.
-// In production, use server-side keyed HMAC to avoid guessability.
-function aliasFor(viewerId: string, personId: string) {
-  // create a small stable number from the pair
-  const seed = viewerId + '|' + personId;
-  let h = 2166136261 >>> 0;
-  for (let i = 0; i < seed.length; i++) {
-    h ^= seed.charCodeAt(i);
-    h = Math.imul(h, 16777619) >>> 0;
-  }
-  const num = (h % 900) + 100; // 100-999
-  const adjectives = ['Blue','Silent','Swift','Bright','Kind','Lucky','Quiet','Bold','Curious','Brave'];
-  const adj = adjectives[h % adjectives.length];
-  return `${adj}-${num}`; // e.g. "Silent-237"
-}
-
 export default function PeersScreen() {
   const router = useRouter();
-  // In a real app, currentViewerId = auth.currentUser.id
-  const currentViewerId = 'currentUser_999'; // placeholder demo viewer id
 
   return (
     <View style={styles.container}>
@@ -50,31 +32,24 @@ export default function PeersScreen() {
         <View style={{ width: 36 }} />{/* spacer to balance header */}
       </View>
 
-      <Text style={styles.hint}>
-        You’ll see each person with a unique alias — aliases differ per viewer to protect identity.
-      </Text>
-
       <FlatList
         data={connections}
         keyExtractor={(p) => p.id}
         contentContainerStyle={{ padding: 20 }}
-        renderItem={({ item }) => {
-          const alias = aliasFor(currentViewerId, item.id);
-          return (
-            <TouchableOpacity style={styles.card} onPress={() => {/* open chat / profile anonymously */}}>
-              <View style={styles.left}>
-                <View style={styles.avatar}>
-                  <Text style={styles.avatarText}>{alias.split('-')[0][0]}</Text>
-                </View>
+        renderItem={({ item }) => (
+          <TouchableOpacity style={styles.card} onPress={() => {/* open chat / profile */}}>
+            <View style={styles.left}>
+              <View style={styles.avatar}>
+                <Text style={styles.avatarText}>{item.realName[0]}</Text>
               </View>
-              <View style={styles.info}>
-                <Text style={styles.alias}>{alias}</Text>
-                <Text style={styles.meta}>Connected • {item.dept}</Text>
-              </View>
-              <Ionicons name="chevron-forward" size={20} color="#bbb" />
-            </TouchableOpacity>
-          );
-        }}
+            </View>
+            <View style={styles.info}>
+              <Text style={styles.alias}>{item.realName}</Text>
+              <Text style={styles.meta}>Connected • {item.dept}</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={20} color="#bbb" />
+          </TouchableOpacity>
+        )}
       />
     </View>
   );
@@ -82,17 +57,10 @@ export default function PeersScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#F8F8F8', paddingTop: 50 },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    marginBottom: 8,
-  },
+  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 16, marginBottom: 8 },
   backBtn: { flexDirection: 'row', alignItems: 'center' },
   backText: { color: '#407ED1', marginLeft: 6, fontSize: 16 },
   title: { fontSize: 20, fontWeight: '700' },
-  hint: { color: '#39ACB5', paddingHorizontal: 20, marginBottom: 10 },
   card: {
     backgroundColor: '#fff',
     borderRadius: 10,

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   View,
   Text,
@@ -12,7 +12,7 @@ import {
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 
-// Chat list data to look up chat name
+// Chat list data
 const chats = [
   { id: '1', name: 'Otaku Zone', sender: 'user#101', lastMessage: 'Did you watch the latest episode?', time: '10:45 AM' },
   { id: '2', name: 'Volleyball', sender: 'user#202', lastMessage: 'Training at 5 pm today!', time: '9:30 AM' },
@@ -21,8 +21,8 @@ const chats = [
   { id: '5', name: 'Meme Lords', sender: 'user#606', lastMessage: 'Check this hilarious meme 😂', time: 'Today' },
 ];
 
-// All messages with more entries
-const allMessages = {
+// All messages store (persistent across chats)
+const messagesStore: { [key: string]: any[] } = {
   '1': [
     { id: '1', sender: 'user#101', text: 'Did you watch the latest episode?', time: '10:45 AM' },
     { id: '2', sender: 'user#202', text: 'Yes! It was amazing 😍', time: '10:50 AM' },
@@ -38,22 +38,29 @@ const allMessages = {
     { id: '2', sender: 'user#101', text: 'I recorded it, I’ll share it!', time: '8:25 PM' },
   ],
   '4': [
-    { id: '1', sender: 'user#505', text: 'Let\'s play doubles tomorrow?', time: '7:15 PM' },
-    { id: '2', sender: 'user#606', text: 'I am in! What time?', time: '7:20 PM' },
-    { id: '3', sender: 'user#707', text: 'Can join after 6 pm.', time: '7:22 PM' },
-    { id: '4', sender: 'user#505', text: 'Perfect, see you then!', time: '7:25 PM' },
-  ],
+  { id: '1', sender: 'Ashfaq', text: 'Let\'s play doubles tomorrow?', time: '7:15 PM' },
+  { id: '2', sender: 'Sam', text: 'I am in! What time?', time: '7:20 PM' },
+  { id: '3', sender: 'Ashfaq', text: 'Can join after 6 pm.', time: '7:22 PM' },
+  { id: '4', sender: 'Sam', text: 'Perfect, see you then!', time: '7:25 PM' },
+  { id: '5', sender: 'Sai', text: 'Bro I beat you 21-11 in doubles 🤣🤣', time: '7:30 PM' },
+  { id: '6', sender: 'Ashfaq', text: 'Bro, that was luck! 😤', time: '7:31 PM' },
+  { id: '7', sender: 'Sai', text: 'Haha no way! Rematch next time! 🤣', time: '7:32 PM' },
+],
   '5': [
-    { id: '1', sender: 'user#606', text: 'Check this hilarious meme 😂', time: 'Today' },
-    { id: '2', sender: 'user#101', text: '😂😂 I can’t stop laughing', time: 'Today' },
-  ],
+  { id: '1', sender: 'AnonChihuahua', text: 'Check this hilarious meme 😂', time: 'Today' },
+  { id: '2', sender: 'SecretPenguin42', text: '😂😂 I can’t stop laughing', time: 'Today' },
+  { id: '3', sender: 'MysteryHamster', text: 'This one slaps!', time: 'Today' },
+  { id: '4', sender: 'AnonNoodle', text: 'Lol I showed it to my friend 🤣', time: 'Today' },
+]
 };
 
 export default function ChatScreen() {
   const router = useRouter();
-  const { chatId } = useLocalSearchParams(); // ✅ Correct for Expo Router
+  const { chatId } = useLocalSearchParams();
+  const flatListRef = useRef<FlatList>(null);
 
-  const [messages, setMessages] = useState(allMessages[chatId] || []);
+  // Preload messages from the store
+  const [messages, setMessages] = useState(messagesStore[chatId] || []);
   const [newMessage, setNewMessage] = useState('');
 
   const currentChat = chats.find(chat => chat.id === chatId);
@@ -64,14 +71,26 @@ export default function ChatScreen() {
 
     const newMsg = {
       id: (messages.length + 1).toString(),
-      sender: 'user#202', // assuming this is "me"
+      sender: 'user#202', // "me"
       text: newMessage,
       time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
     };
 
-    setMessages([...messages, newMsg]);
+    // Update local state and persistent store
+    const updatedMessages = [...messages, newMsg];
+    setMessages(updatedMessages);
+    messagesStore[chatId] = updatedMessages;
+
     setNewMessage('');
+
+    // Auto-scroll
+    setTimeout(() => flatListRef.current?.scrollToEnd({ animated: true }), 50);
   };
+
+  useEffect(() => {
+    // Scroll to bottom on chat load
+    setTimeout(() => flatListRef.current?.scrollToEnd({ animated: false }), 50);
+  }, []);
 
   const renderMessageItem = ({ item }) => (
     <View style={[styles.messageItem, item.sender === 'user#202' && styles.myMessageItem]}>
@@ -99,6 +118,7 @@ export default function ChatScreen() {
       </View>
 
       <FlatList
+        ref={flatListRef}
         data={messages}
         keyExtractor={(item) => item.id}
         renderItem={renderMessageItem}
@@ -124,10 +144,7 @@ export default function ChatScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#F8F8F8',
-  },
+  container: { flex: 1, backgroundColor: '#F8F8F8' },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -139,19 +156,9 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: '#eee',
   },
-  backBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  backText: {
-    color: '#407ED1',
-    marginLeft: 6,
-    fontSize: 16,
-  },
-  headerTitle: {
-    fontSize: 20,
-    fontWeight: '700',
-  },
+  backBtn: { flexDirection: 'row', alignItems: 'center' },
+  backText: { color: '#407ED1', marginLeft: 6, fontSize: 16 },
+  headerTitle: { fontSize: 20, fontWeight: '700' },
   messageItem: {
     marginBottom: 15,
     padding: 12,
@@ -165,21 +172,9 @@ const styles = StyleSheet.create({
     maxWidth: '80%',
     alignSelf: 'flex-start',
   },
-  messageSender: {
-    fontWeight: '700',
-    color: '#407ED1',
-    marginBottom: 2,
-  },
-  messageText: {
-    fontSize: 14,
-    color: '#333',
-  },
-  messageTime: {
-    fontSize: 12,
-    color: '#888',
-    marginTop: 2,
-    alignSelf: 'flex-end',
-  },
+  messageSender: { fontWeight: '700', color: '#407ED1', marginBottom: 2 },
+  messageText: { fontSize: 14, color: '#333' },
+  messageTime: { fontSize: 12, color: '#888', marginTop: 2, alignSelf: 'flex-end' },
   inputContainer: {
     flexDirection: 'row',
     paddingHorizontal: 16,
@@ -189,26 +184,8 @@ const styles = StyleSheet.create({
     borderTopColor: '#eee',
     alignItems: 'center',
   },
-  input: {
-    flex: 1,
-    padding: 12,
-    backgroundColor: '#F0F0F0',
-    borderRadius: 25,
-    fontSize: 14,
-  },
-  sendButton: {
-    marginLeft: 10,
-    backgroundColor: '#407ED1',
-    padding: 12,
-    borderRadius: 25,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  myMessageItem: {
-    backgroundColor: '#E1F5FE',
-    alignSelf: 'flex-end',
-  },
-  myMessageSender: {
-    color: '#0288D1',
-  },
+  input: { flex: 1, padding: 12, backgroundColor: '#F0F0F0', borderRadius: 25, fontSize: 14 },
+  sendButton: { marginLeft: 10, backgroundColor: '#407ED1', padding: 12, borderRadius: 25, alignItems: 'center', justifyContent: 'center' },
+  myMessageItem: { backgroundColor: '#E1F5FE', alignSelf: 'flex-end' },
+  myMessageSender: { color: '#0288D1' },
 });

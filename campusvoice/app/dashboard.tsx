@@ -12,13 +12,18 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
+const userReputations = {
+  'User#204': { rating: 4.8, reviews: 12, summary: 'Great teamwork & reliable.' },
+  'User#307': { rating: 4.5, reviews: 9, summary: 'Quick responder and detail-oriented.' },
+  'User#152': { rating: 4.2, reviews: 6, summary: 'Helpful and polite.' },
+  'User#391': { rating: 4.9, reviews: 15, summary: 'Top contributor in multiple projects.' },
+};
+
 const initialProjects = [
-  { id: '1', title: 'AI-based Attendance System', postedBy: 'User#104', description: 'Tracks student attendance using facial recognition.', skills: 'Python, OpenCV, ML' },
-  { id: '2', title: 'Food Waste Management App', postedBy: 'User#237', description: 'Connects restaurants with NGOs to reduce food waste.', skills: 'React Native, Firebase' },
-  { id: '3', title: 'Blockchain Voting System', postedBy: 'User#351', description: 'Secure and transparent blockchain-based voting platform.', skills: 'Solidity, Web3.js' },
-  { id: '4', title: 'Smart Campus Navigation', postedBy: 'User#482', description: 'Indoor navigation for students and visitors using BLE.', skills: 'IoT, React Native' },
-  { id: '5', title: 'Mental Health Support Bot', postedBy: 'User#596', description: 'Anonymous chatbot providing mental health support.', skills: 'AI, NLP, Python' },
-  { id: '6', title: 'IoT Smart Garden', postedBy: 'User#712', description: 'Automated irrigation system using IoT sensors.', skills: 'Arduino, IoT, Cloud' },
+  { id: '1', title: 'AI-based Attendance System', postedBy: 'User#104', description: 'Tracks student attendance using facial recognition.', skills: 'Python, OpenCV, ML', helpers: [] },
+  { id: '2', title: 'Food Waste Management App', postedBy: 'User#237', description: 'Connects restaurants with NGOs to reduce food waste.', skills: 'React Native, Firebase', helpers: [] },
+  { id: '3', title: 'Blockchain Voting System', postedBy: 'User#351', description: 'Secure and transparent blockchain-based voting platform.', skills: 'Solidity, Web3.js', helpers: [] },
+  { id: '4', title: 'Smart Campus Navigation', postedBy: 'User#482', description: 'Indoor navigation for students and visitors using BLE.', skills: 'IoT, React Native', helpers: [] },
 ];
 
 export default function DashboardScreen() {
@@ -26,6 +31,7 @@ export default function DashboardScreen() {
   const [projects, setProjects] = useState(initialProjects);
   const [modalVisible, setModalVisible] = useState(false);
   const [detailsVisible, setDetailsVisible] = useState(false);
+  const [requestsVisible, setRequestsVisible] = useState(false);
   const [selectedProject, setSelectedProject] = useState(null);
   const [offerPayment, setOfferPayment] = useState(false);
 
@@ -47,6 +53,7 @@ export default function DashboardScreen() {
       skills,
       deadline,
       amount,
+      helpers: [],
     };
     setProjects([newProject, ...projects]);
     setModalVisible(false);
@@ -69,10 +76,46 @@ export default function DashboardScreen() {
     setDetailsVisible(true);
   };
 
+  const handleOfferHelp = (projectId) => {
+    const randomUser = `User#${Math.floor(Math.random() * 500)}`;
+    const updated = projects.map((p) =>
+      p.id === projectId && !p.helpers.includes(randomUser)
+        ? { ...p, helpers: [...p.helpers, randomUser] }
+        : p
+    );
+    setProjects(updated);
+    setDetailsVisible(false);
+    alert('You offered to help this project!');
+  };
+
+    const handleDecision = (user, decision) => {
+    alert(
+      decision === 'accept'
+        ? `You accepted ${user} as a helper.`
+        : `You rejected ${user}'s request.`
+    );
+
+    const updatedProjects = projects.map((p) =>
+      p.id === selectedProject.id
+        ? { ...p, helpers: p.helpers.filter((h) => h !== user) }
+        : p
+    );
+
+    // update the main list
+    setProjects(updatedProjects);
+
+    // update currently open project (so modal updates immediately)
+    const updatedProject = updatedProjects.find(p => p.id === selectedProject.id);
+    setSelectedProject(updatedProject);
+  };
+  const handleViewRequests = (project) => {
+  setSelectedProject(project); // set the project whose helpers you want to see
+  setRequestsVisible(true);    // show the helpers modal
+};
+
   return (
     <View style={styles.container}>
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-        {/* Header */}
         <View style={styles.header}>
           <Text style={styles.title}>CampusVoice</Text>
           <Ionicons name="notifications-outline" size={24} color="#1A1A1A" />
@@ -83,19 +126,19 @@ export default function DashboardScreen() {
           Find peers to collaborate with or share your projects anonymously
         </Text>
 
-        {/* Projects Section */}
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>Active Projects</Text>
-          <TouchableOpacity>
-            <Text style={styles.seeAll}>See all</Text>
-          </TouchableOpacity>
         </View>
 
-        {/* Project List */}
         {projects.map((item) => (
           <TouchableOpacity key={item.id} style={styles.projectCard} onPress={() => openProjectDetails(item)}>
             <Text style={styles.projectTitle}>{item.title}</Text>
             <Text style={styles.projectPoster}>by {item.postedBy}</Text>
+            {item.helpers.length > 0 && (
+              <TouchableOpacity onPress={() => handleViewRequests(item)}>
+                <Text style={styles.helperNotice}>{item.helpers.length} people offered to help</Text>
+              </TouchableOpacity>
+            )}
           </TouchableOpacity>
         ))}
 
@@ -105,8 +148,7 @@ export default function DashboardScreen() {
         </TouchableOpacity>
       </ScrollView>
 
-            {/* --- PROJECT DETAILS MODAL --- */}
-      {/* --- PROJECT DETAILS MODAL --- */}
+      {/* PROJECT DETAILS MODAL */}
       <Modal visible={detailsVisible} animationType="fade" transparent>
         <View style={styles.modalOverlay}>
           <View style={[styles.modalContainer, { padding: 20 }]}>
@@ -116,33 +158,20 @@ export default function DashboardScreen() {
                 <Text style={styles.detailText}>Posted by: {selectedProject.postedBy}</Text>
                 <Text style={styles.detailText}>Description: {selectedProject.description}</Text>
                 <Text style={styles.detailText}>Skills: {selectedProject.skills}</Text>
-                {selectedProject.deadline && (
-                  <Text style={styles.detailText}>Deadline: {selectedProject.deadline}</Text>
-                )}
-                {selectedProject.amount && (
-                  <Text style={styles.detailText}>Payment: {selectedProject.amount}</Text>
-                )}
 
-                {/* --- Buttons for Help / Cancel --- */}
+                {selectedProject.deadline && <Text style={styles.detailText}>Deadline: {selectedProject.deadline}</Text>}
+                {selectedProject.amount && <Text style={styles.detailText}>Payment: {selectedProject.amount}</Text>}
+
                 <View style={[styles.modalButtons, { justifyContent: 'space-between' }]}>
                   <TouchableOpacity
-                    style={[
-                      styles.postButton,
-                      { backgroundColor: '#4CAF50', flex: 1, marginRight: 10 },
-                    ]}
-                    onPress={() => {
-                      setDetailsVisible(false);
-                      alert('You offered to help this project!');
-                    }}
+                    style={[styles.postButton, { backgroundColor: '#4CAF50', flex: 1, marginRight: 10 }]}
+                    onPress={() => handleOfferHelp(selectedProject.id)}
                   >
                     <Text style={styles.postText}>Help</Text>
                   </TouchableOpacity>
 
                   <TouchableOpacity
-                    style={[
-                      styles.postButton,
-                      { backgroundColor: '#E53935', flex: 1 },
-                    ]}
+                    style={[styles.postButton, { backgroundColor: '#E53935', flex: 1 }]}
                     onPress={() => setDetailsVisible(false)}
                   >
                     <Text style={styles.postText}>Cancel</Text>
@@ -153,41 +182,64 @@ export default function DashboardScreen() {
           </View>
         </View>
       </Modal>
-      {/* --- POST NEW PROJECT MODAL --- */}
+
+      {/* HELP REQUESTS MODAL */}
+      <Modal visible={requestsVisible} animationType="slide" transparent>
+        <View style={styles.modalOverlay}>
+          <View style={[styles.modalContainer, { maxHeight: '70%' }]}>
+            <Text style={styles.modalTitle}>Helpers for {selectedProject?.title}</Text>
+
+            <ScrollView>
+              {selectedProject?.helpers.length ? (
+                selectedProject.helpers.map((helper) => (
+                  <View key={helper} style={styles.helperCard}>
+                    <View>
+                      <Text style={styles.helperName}>{helper}</Text>
+                      <Text style={styles.helperDetail}>
+                        ⭐ {userReputations[helper]?.rating || '4.0'} ({userReputations[helper]?.reviews || '0'} reviews)
+                      </Text>
+                      <Text style={styles.helperSummary}>{userReputations[helper]?.summary || 'No summary available.'}</Text>
+                    </View>
+                    <View style={styles.helperButtons}>
+                      <TouchableOpacity
+                        style={[styles.actionButton, { backgroundColor: '#4CAF50' }]}
+                        onPress={() => handleDecision(helper, 'accept')}
+                      >
+                        <Ionicons name="checkmark" size={20} color="#fff" />
+                      </TouchableOpacity>
+                      <TouchableOpacity
+                        style={[styles.actionButton, { backgroundColor: '#E53935' }]}
+                        onPress={() => handleDecision(helper, 'reject')}
+                      >
+                        <Ionicons name="close" size={20} color="#fff" />
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+                ))
+              ) : (
+                <Text style={styles.noHelpers}>No helpers yet.</Text>
+              )}
+            </ScrollView>
+
+            <TouchableOpacity
+              style={[styles.postButton, { backgroundColor: '#1A1A1A', marginTop: 10 }]}
+              onPress={() => setRequestsVisible(false)}
+            >
+              <Text style={styles.postText}>Close</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
+      {/* POST NEW PROJECT MODAL */}
       <Modal visible={modalVisible} animationType="slide" transparent>
         <View style={styles.modalOverlay}>
           <View style={styles.modalContainer}>
             <Text style={styles.modalTitle}>Post a New Project / Help Request</Text>
-
-            <TextInput
-              placeholder="Project Title"
-              value={title}
-              onChangeText={setTitle}
-              style={styles.input}
-              placeholderTextColor="#888"
-            />
-            <TextInput
-              placeholder="Description"
-              value={description}
-              onChangeText={setDescription}
-              style={[styles.input, { height: 80 }]}
-              multiline
-              placeholderTextColor="#888"
-            />
-            <TextInput
-              placeholder="Skills Required"
-              value={skills}
-              onChangeText={setSkills}
-              style={styles.input}
-              placeholderTextColor="#888"
-            />
-            <TextInput
-              placeholder="Deadline (optional)"
-              value={deadline}
-              onChangeText={setDeadline}
-              style={styles.input}
-              placeholderTextColor="#888"
-            />
+            <TextInput placeholder="Project Title" value={title} onChangeText={setTitle} style={styles.input} placeholderTextColor="#888" />
+            <TextInput placeholder="Description" value={description} onChangeText={setDescription} style={[styles.input, { height: 80 }]} multiline placeholderTextColor="#888" />
+            <TextInput placeholder="Skills Required" value={skills} onChangeText={setSkills} style={styles.input} placeholderTextColor="#888" />
+            <TextInput placeholder="Deadline (optional)" value={deadline} onChangeText={setDeadline} style={styles.input} placeholderTextColor="#888" />
 
             <View style={styles.paymentRow}>
               <Text style={styles.paymentText}>Offer Payment?</Text>
@@ -195,29 +247,14 @@ export default function DashboardScreen() {
             </View>
 
             {offerPayment && (
-              <TextInput
-                placeholder="Amount"
-                value={amount}
-                onChangeText={setAmount}
-                style={styles.input}
-                placeholderTextColor="#888"
-                keyboardType="numeric"
-              />
+              <TextInput placeholder="Amount" value={amount} onChangeText={setAmount} style={styles.input} placeholderTextColor="#888" keyboardType="numeric" />
             )}
 
-            {/* Buttons */}
             <View style={[styles.modalButtons, { justifyContent: 'space-between' }]}>
-              <TouchableOpacity
-                style={[styles.postButton, { backgroundColor: '#E53935', flex: 1, marginRight: 10 }]}
-                onPress={() => setModalVisible(false)}
-              >
+              <TouchableOpacity style={[styles.postButton, { backgroundColor: '#E53935', flex: 1, marginRight: 10 }]} onPress={() => setModalVisible(false)}>
                 <Text style={styles.postText}>Cancel</Text>
               </TouchableOpacity>
-
-              <TouchableOpacity
-                style={[styles.postButton, { backgroundColor: '#4CAF50', flex: 1 }]}
-                onPress={handlePost}
-              >
+              <TouchableOpacity style={[styles.postButton, { backgroundColor: '#4CAF50', flex: 1 }]} onPress={handlePost}>
                 <Text style={styles.postText}>Post</Text>
               </TouchableOpacity>
             </View>
@@ -225,7 +262,7 @@ export default function DashboardScreen() {
         </View>
       </Modal>
 
-      {/* Bottom Navigation */}
+      {/* Bottom Nav */}
       <View style={styles.bottomNav}>
         <TouchableOpacity style={styles.navItem} onPress={() => handleTabPress('Home')}>
           <Ionicons name="home" size={24} color={activeTab === 'Home' ? '#407ED1' : '#1A1A1A'} />
@@ -243,177 +280,41 @@ export default function DashboardScreen() {
     </View>
   );
 }
-// ---------- STYLES ----------
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#F8F8F8',
-  },
-  scrollContent: {
-    paddingTop: 60,
-    paddingHorizontal: 20,
-    paddingBottom: 100,
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 15,
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: '700',
-    color: '#1A1A1A',
-  },
-  greeting: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#1A1A1A',
-    marginTop: 10,
-  },
-  subtitle: {
-    fontSize: 14,
-    color: '#39ACB5',
-    marginBottom: 20,
-  },
-  sectionHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 10,
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#1A1A1A',
-  },
-  seeAll: {
-    fontSize: 14,
-    color: '#407ED1',
-  },
-  projectCard: {
-    backgroundColor: '#fff',
-    borderRadius: 10,
-    padding: 15,
-    marginBottom: 10,
-    shadowColor: '#000',
-    shadowOpacity: 0.05,
-    shadowOffset: { width: 0, height: 2 },
-    shadowRadius: 4,
-    elevation: 2,
-  },
-  projectTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#1A1A1A',
-  },
-  projectPoster: {
-    fontSize: 13,
-    color: '#888',
-    marginTop: 5,
-  },
-  addButton: {
-    flexDirection: 'row',
-    backgroundColor: '#407ED1',
-    padding: 15,
-    borderRadius: 10,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: 20,
-  },
-  addButtonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '600',
-    marginLeft: 8,
-  },
-  bottomNav: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    backgroundColor: '#fff',
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    paddingVertical: 12,
-    borderTopWidth: 1,
-    borderTopColor: '#ddd',
-  },
-  navItem: {
-    alignItems: 'center',
-  },
-  navText: {
-    fontSize: 12,
-    color: '#1A1A1A',
-    marginTop: 4,
-  },
-  navTextActive: {
-    fontSize: 12,
-    color: '#407ED1',
-    marginTop: 4,
-    fontWeight: '600',
-  },
 
-  // Modal Styles
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.3)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 20,
-  },
-  modalContainer: {
-    width: '100%',
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    padding: 20,
-  },
-  modalTitle: {
-    fontSize: 20,
-    fontWeight: '700',
-    marginBottom: 15,
-    color: '#1A1A1A',
-  },
-  input: {
-    borderWidth: 1,
-    borderColor: '#ddd',
-    borderRadius: 8,
-    padding: 10,
-    fontSize: 14,
-    marginBottom: 10,
-    color: '#1A1A1A',
-  },
-  paymentRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginVertical: 10,
-  },
-  paymentText: {
-    fontSize: 15,
-    color: '#1A1A1A',
-  },
-  modalButtons: {
-    flexDirection: 'row',
-    justifyContent: 'flex-end',
-    marginTop: 15,
-  },
-  cancelButton: {
-    marginRight: 15,
-  },
-  cancelText: {
-    color: '#888',
-    fontSize: 15,
-  },
-  postButton: {
-    backgroundColor: '#407ED1',
-    borderRadius: 8,
-    paddingVertical: 8,
-    paddingHorizontal: 20,
-  },
-  postText: {
-    color: '#fff',
-    fontSize: 15,
-    fontWeight: '600',
-  },
+const styles = StyleSheet.create({
+  container: { flex: 1, backgroundColor: '#fff' },
+  scrollContent: { padding: 20, paddingBottom: 100 },
+  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  title: { fontSize: 22, fontWeight: 'bold' },
+  greeting: { fontSize: 18, marginTop: 10 },
+  subtitle: { fontSize: 14, color: '#666', marginBottom: 20 },
+  sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', marginVertical: 10 },
+  sectionTitle: { fontSize: 18, fontWeight: '600' },
+  projectCard: { backgroundColor: '#F7F7F7', borderRadius: 12, padding: 15, marginVertical: 8 },
+  projectTitle: { fontSize: 16, fontWeight: '600' },
+  projectPoster: { fontSize: 13, color: '#666' },
+  helperNotice: { color: '#407ED1', marginTop: 5, fontWeight: '500' },
+  addButton: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#407ED1', padding: 14, borderRadius: 12, justifyContent: 'center', marginTop: 20 },
+  addButtonText: { color: '#fff', fontWeight: '600', marginLeft: 10 },
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center' },
+  modalContainer: { backgroundColor: '#fff', borderRadius: 16, padding: 20, width: '90%' },
+  modalTitle: { fontSize: 18, fontWeight: 'bold', marginBottom: 10 },
+  detailText: { marginVertical: 3 },
+  modalButtons: { flexDirection: 'row', marginTop: 15 },
+  postButton: { padding: 12, borderRadius: 10, alignItems: 'center' },
+  postText: { color: '#fff', fontWeight: '600' },
+  input: { backgroundColor: '#F3F3F3', borderRadius: 10, padding: 10, marginVertical: 8, color: '#000' },
+  paymentRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginVertical: 10 },
+  paymentText: { fontSize: 15, fontWeight: '500' },
+  bottomNav: { flexDirection: 'row', justifyContent: 'space-around', paddingVertical: 12, borderTopWidth: 1, borderColor: '#ddd', backgroundColor: '#fff' },
+  navItem: { alignItems: 'center' },
+  navText: { fontSize: 12, color: '#444' },
+  navTextActive: { fontSize: 12, color: '#407ED1', fontWeight: '600' },
+  helperCard: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#F7F7F7', padding: 12, borderRadius: 10, marginVertical: 6 },
+  helperName: { fontWeight: 'bold' },
+  helperDetail: { fontSize: 13, color: '#666' },
+  helperSummary: { fontSize: 12, color: '#777', marginTop: 2 },
+  helperButtons: { flexDirection: 'row' },
+  actionButton: { marginLeft: 8, padding: 8, borderRadius: 8 },
+  noHelpers: { textAlign: 'center', color: '#999', marginTop: 20 },
 });

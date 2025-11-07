@@ -42,14 +42,6 @@ export default function MessagesScreen() {
         renderItem={renderChatItem}
         contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 10 }}
       />
-
-      {/* Test button */}
-      <TouchableOpacity
-        style={styles.testButton}
-        onPress={() => router.push('/messages/chat')}
-      >
-        <Text style={styles.testButtonText}>Go to Chat Screen</Text>
-      </TouchableOpacity>
     </View>
   );
 }
